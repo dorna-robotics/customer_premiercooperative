@@ -14,6 +14,9 @@ dorna
 - Report the IP address listed there, for example
 ```bash
 nx://192.168.254.49:4000
+ssh://192.168.254.49:22
+nx://172.17.0.1:4000
+ssh://172.17.0.1:22
 ```
-- We use this IP address to access the computer
+- We use the IP address listed above to access the computer.
 
