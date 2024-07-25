@@ -129,18 +129,20 @@ class Probe(object):
     def connect(self):
         # robot
         self.robot = Dorna()
-        if not self.robot.connect(config.robot["ip"]):
+        if not self.robot.connect(config.robot_ip):
             self.robot.log("Robot connection failed")
             return False
 
         # camera
         self.camera = Camera()
+        """
         if not self.camera.connect(filter=None):
             self.robot.log("Camera connection failed")
             return False
+        """
 
         # yolo
-        self.model = YOLO(self.config.detection["model_path"], task="segment")
+        #self.model = YOLO(self.config.detection["model_path"], task="segment")
 
         self.robot.log("Probe is connected")
         return True
@@ -196,14 +198,14 @@ class Probe(object):
 
 
     # engage the joystick
-    def engage(self):
+    def joystick_engage(self):
         self.robot.jmove(self.config.joystick["disengage_joint"], vel=self.config.joystick["vel_joint"], accel=self.config.joystick["accel_joint"], jerk=self.config.joystick["jerk_joint"])
         self.robot.jmove(self.config.joystick["standby_middle_joint"], vel=self.config.joystick["vel_joint"], accel=self.config.joystick["accel_joint"], jerk=self.config.joystick["jerk_joint"])
         return self.robot.lmove(self.config.joystick["standby"], vel=self.config.joystick["vel"], accel=self.config.joystick["accel"], jerk=self.config.joystick["jerk"])
 
 
     # disengage the joystick
-    def disengage(self):
+    def joystick_disengage(self):
         self.robot.jmove(self.config.joystick["standby_middle_joint"], vel=self.config.joystick["vel_joint"], accel=self.config.joystick["accel_joint"], jerk=self.config.joystick["jerk_joint"])
         return self.robot.jmove(self.config.joystick["disengage_joint"], vel=self.config.joystick["vel_joint"], accel=self.config.joystick["accel_joint"], jerk=self.config.joystick["jerk_joint"])
 
