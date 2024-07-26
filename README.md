@@ -28,3 +28,7 @@ dorna
 - Next, Connect the black and red wires coming off the emergency stop button to the control box. Using a small flat head screwdriver, you can loosen the I/O ports at Input 0 and 24v port closest to it. The red wire goes to the 24v and the black wire goes to the Input 0. 
 - Following this, connect the Dorna Control Box to your router or networking box using an ehternet cable and the port on the front of the Dorna Control Box.![PXL_20240726_174502070 MP](https://github.com/user-attachments/assets/5c153dec-f717-4ed9-89ac-32abbded5343)
 - Last, using the power port on the back connect the cable to your outlet and switch the robot on. ![PXL_20240726_174436744 MP](https://github.com/user-attachments/assets/370d03f2-4bb8-4612-9ddf-0c51c75a4a89)
+
+# Demonstration
+Here you will find a video showing Dorna TA's interaction with the joystick, switches, and emergency stop button.
+https://youtu.be/WBT-RGrPris
