@@ -1,7 +1,8 @@
 import numpy as np
 import time
-import config
-from ultralytics import YOLO
+from dorna2 import Dorna, Kinematic
+from camera import Camera
+#from ultralytics import YOLO
 
 
 class Detection(object):
@@ -118,41 +119,70 @@ class Detection(object):
 define all the robot motion here
 """
 class Probe(object):
-    """docstring for Motion"""
-    def __init__(self, robot, config):
-        super(Motion, self).__init__()
+    """docstring for Probe"""
+    def __init__(self, config):
+        super(Probe, self).__init__()
         # config
         self.config = config
+        """
+        0 startp
+        1 ready
+        0 joystick
+        1 switch_alarm
+        2 switch_vac
+        3 switch_on_off
+        4 switch_in_out
+        """
+        self.state = 0
 
 
     # connect all the items
-    def connect(self):
+    def connect(self, mode=["camera", "robot", "net"]):
         # robot
         self.robot = Dorna()
-        if not self.robot.connect(config.robot_ip):
-            self.robot.log("Robot connection failed")
-            return False
+
+        # emergency event
+        self.robot_stop = False
+        self.robot.add_event(target=self.emergency_event)
+
+        # connect
+        if "robot" in mode:
+            print("robot is connected: ", self.robot.connect(self.config.robot_ip))
+
 
         # camera
         self.camera = Camera()
-        """
-        if not self.camera.connect(filter=None):
-            self.robot.log("Camera connection failed")
-            return False
-        """
+        if "camera" in mode:
+            print("camera is connected: ", self.camera.connect(filter=None))
 
+        # net
         # yolo
         #self.model = YOLO(self.config.detection["model_path"], task="segment")
 
-        self.robot.log("Probe is connected")
         return True
+
+    # emergency
+    def emergency_event(self, msg, union):
+        if self.config.emergency[0] in msg:
+            if msg[self.config.emergency[0]] == self.config.emergency[1][0]: # clear alarm
+                if self.robot_stop:
+                    self.robot_stop = False
+                    self.robot.set_alarm(0)
+                
+            elif msg[self.config.emergency[0]] == self.config.emergency[1][1]: # alarm
+                # Set the prm_stop flag
+                if not self.robot_stop:
+                    self.robot_stop = True 
+                    self.robot.play_list(self.config.estop)
+                    self.robot.set_alarm(1)
+
+                    
 
 
         # close all the items
         def close(self):
             self.robot.close()
             self.camera.close()
-
 
 
     def _engage_time(self, direction, degree):
@@ -167,11 +197,17 @@ class Probe(object):
         
         return degree / self.config.probe[joint]
 
+    
+    # startup
+    def startup(self):
+        return self.robot.play_list(self.config.startup_routine)
 
-    def go(self, direction, step):
+    
+    def joystick(self, direction, step):
         if direction not in ["up", "down", "left", "right"]:
             return None
 
+        # adjust direction
         if step < 0:
             if direction == "up":
                 direction = "down"
@@ -182,34 +218,83 @@ class Probe(object):
             elif direction == "right":
                 direction = "left"
 
-        # engage time
-        time_engage = self._engage_time(direction, np.abs(step))
+        # engage time: add the offset as well
+        time_engage = self._engage_time(direction, np.abs(step)) + self.config.joystick_offset_time[direction]
 
-        # engage
-        start = time.time()
-        robot.lmove(self.config.joystick["up"], vel=self.config.joystick["vel"], accel=self.config.joystick["accel"], jerk=self.config.joystick["jerk"])
+        # adjust the command
+        cmds = list(getattr(self.config, "joystick_"+direction))
+        cmds = cmds[0:2] + [{"cmd": "sleep", "time": time_engage}] + cmds[2:]
 
-        # remaining time
-        time_passed = time.time()-start
-        time.sleep(max(0, time_engage-time_passed))
+        # play the script
+        return self.robot.play_list(cmds)
 
-        # go to standby
-        return robot.lmove(self.config.joystick["standby"], vel=self.config.joystick["vel"], accel=self.config.joystick["accel"], jerk=self.config.joystick["jerk"])
-
-
+    
     # engage the joystick
     def joystick_engage(self):
-        self.robot.jmove(self.config.joystick["disengage_joint"], vel=self.config.joystick["vel_joint"], accel=self.config.joystick["accel_joint"], jerk=self.config.joystick["jerk_joint"])
-        self.robot.jmove(self.config.joystick["standby_middle_joint"], vel=self.config.joystick["vel_joint"], accel=self.config.joystick["accel_joint"], jerk=self.config.joystick["jerk_joint"])
-        return self.robot.lmove(self.config.joystick["standby"], vel=self.config.joystick["vel"], accel=self.config.joystick["accel"], jerk=self.config.joystick["jerk"])
+        self.robot.play_list(self.config.joystick_engage)
 
-
+    
     # disengage the joystick
     def joystick_disengage(self):
-        self.robot.jmove(self.config.joystick["standby_middle_joint"], vel=self.config.joystick["vel_joint"], accel=self.config.joystick["accel_joint"], jerk=self.config.joystick["jerk_joint"])
-        return self.robot.jmove(self.config.joystick["disengage_joint"], vel=self.config.joystick["vel_joint"], accel=self.config.joystick["accel_joint"], jerk=self.config.joystick["jerk_joint"])
+        self.robot.play_list(self.config.joystick_disengage)
 
 
+    def switch_alarm_engage(self):
+        self.robot.play_list(self.config.switch_alarm_engage)
+
+    
+    def switch_alarm_disengage(self):
+        self.robot.play_list(self.config.switch_alarm_engage[0:1])
+
+    
+    def switch_alarm(self, direction, time):
+        cmds = list(getattr(self.config, "switch_alarm_"+direction))
+        cmds.append({"cmd": "sleep", "time": time})
+        cmds.append(cmds[0])
+        self.robot.play_list(cmds)
+
+
+    def switch_in_out_engage(self):
+        self.robot.play_list(self.config.switch_in_out_engage)
+
+    
+    def switch_in_out_disengage(self):
+        self.robot.play_list(self.config.switch_in_out_engage[0:1])
+
+    
+    def switch_in_out(self, direction, time):
+        cmds = list(getattr(self.config, "switch_in_out_"+direction))
+        cmds.append({"cmd": "sleep", "time": time})
+        cmds.append(cmds[0])
+        self.robot.play_list(cmds)
+
+    
+    def switch_vac_engage(self):
+        self.robot.play_list(self.config.switch_vac_engage)
+
+    
+    def switch_vac_disengage(self):
+        self.robot.play_list(self.config.switch_vac_engage[0:1])
+
+    
+    def switch_vac(self, direction):
+        cmds = list(getattr(self.config, "switch_vac_"+direction))
+        self.robot.play_list(cmds)
+
+    
+    def switch_on_off_engage(self):
+        self.robot.play_list(self.config.switch_on_off_engage)
+
+    
+    def switch_on_off_disengage(self):
+        self.robot.play_list(self.config.switch_on_off_engage[0:1])
+
+    
+    def switch_on_off(self, direction):
+        cmds = list(getattr(self.config, "switch_on_off_"+direction))
+        self.robot.play_list(cmds)
+
+    
     def home(self, direction):
         if direction not in ["up", "down", "left", "right"]:
             return None
@@ -270,4 +355,17 @@ class Probe(object):
         # go to the standby
         if home:
             return 0
-    """      
+    """
+
+    def close(self):
+        # robot
+        try:
+            self.robot.close()
+        except:
+            pass
+
+        # camera
+        try:
+            self.camera.close()
+        except:
+            pass

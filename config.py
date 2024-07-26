@@ -6,10 +6,10 @@ probe = {
 }
 
 joystick_offset_time = {
-    "up": 0.65,
-    "down": 0.65,
-    "left": 0.9,
-    "right": 0.9
+    "up": 0,
+    "down": 0,
+    "left": 0,
+    "right": 0
 }
 
 detection = {
@@ -69,7 +69,7 @@ search = {
 robot
 """
 robot_model= "dorna_ta"
-robot_ip = "192.168.254.62"
+robot_ip = "192.168.254.18"
 emergency=["in0",[0, 1]] # [pin_index, [off_state, on_state]]
 
 """
@@ -77,7 +77,7 @@ startup routine
 """
 startup_routine = [
     {"cmd": "motor", "motor": 1},
-    {"cmd": "sleep", "time": 0.5},
+    {"cmd": "sleep", "time": 1},
     {"cmd":"jmove","rel":0, "j1":125, "vel": 50, "accel": 800, "jerk":1000},
     {"cmd":"jmove","rel":0,"j0":0},
     {"cmd":"jmove","rel":0, "j2":-125},
@@ -91,7 +91,7 @@ joystick
 # joystick engage
 joystick_engage = [
     {"cmd":"jmove","rel":0,"j0":-8.129883,"j1":40.979004,"j2":-99.09668,"j3":-0.153809,"j4":-31.92627,"j5":0, "vel": 200, "accel": 2000, "jerk":4000},
-    {"cmd":"jmove","rel":0,"j0":-8.10791,"j1":32.255859,"j2":-97.404785,"j3":-0.197754,"j4":-24.851074,"j5":0},
+    {"cmd":"jmove","rel":0,"j0":-7.77832,"j1":32.255859,"j2":-97.404785,"j3":-0.197754,"j4":-24.851074,"j5":0},
 ]
 
 # up after engage
@@ -167,7 +167,7 @@ switch_in_out_in = [
 # after engage
 switch_in_out_out = [
     {**switch_in_out_engage[1], **{"vel": 75, "accel": 500, "jerk":1200}},
-    {"cmd":"jmove","rel":0,"j0":-14.677734,"j1":27.070312,"j2":-102.568359,"j3":-0.285645,"j4":-14.523926,"j5":0},
+    {"cmd":"jmove","rel":0,"j0":-14.501953,"j1":27.070312,"j2":-102.612305,"j3":-0.263672,"j4":-14.47998,"j5":0},
 ]
 
 """
@@ -212,6 +212,6 @@ switch_on_off_off = [
 startup routine
 """
 estop = [
-    joystick_engage[0],
+    {"cmd":"jmove","rel":0,"j0":-8.129883,"j1":40.979004,"j2":-99.09668,"j3":-0.153809,"j4":-31.92627,"j5":0, "vel": 100, "accel": 800, "jerk":1000},
     {"cmd":"jmove","rel":0,"j0":-76.201172, "j1":76.201172, "j2":-138.054199, "j3":2.746582, "j4":-34.057617, "j5":0}
 ]
