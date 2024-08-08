@@ -3,6 +3,7 @@ probe = {
 	"v0": 100,
 	"v1": 100,
 	"l1": 2000,
+	"l2": 2000
 }
 
 joystick_offset_time = {
